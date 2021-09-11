@@ -1,5 +1,6 @@
 #include <dirent.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 
 #include <limits.h>
@@ -11,13 +12,11 @@ typedef struct
 } fileEntry;
 
 static int countFiles(DIR *directory, struct dirent *reader);
+static void populateFileEntries(DIR *directory, struct dirent *reader, fileEntry files[]);
 
 int main(void)
 {
     DIR *directory;
-    struct dirent *reader;
-    struct stat st;
-    int numberOfFiles;
 
     // open directory
     directory = opendir(".");
@@ -26,31 +25,38 @@ int main(void)
         perror("Unable to read directory");
         return (1);
     }
+    int numberOfFiles = countFiles(directory, readdir(directory));
+    fileEntry files[numberOfFiles];
 
-    // read directory
-    while ((reader = readdir(directory)))
-    {
-        char *name = reader->d_name;
-        stat(name, &st);
-        int size;
-        size = st.st_size;
-        printf("%s: %d bytes\n", name, size);
-        numberOfFiles++;
-    }
+    // reset directory stream
+    rewinddir(directory);
+    populateFileEntries(directory, readdir(directory), files);
 
-    // Total Files from func: 32767
-    printf("Total Files from func: %d\n", countFiles(directory, readdir(directory)));
-
-    // Total Files inline: 7
-    printf("Total Files inline: %d\n", numberOfFiles);
+    printf("Total Files: %d\n", numberOfFiles);
 
     // close directory
     return closedir(directory);
 }
 
+void populateFileEntries(DIR *directory, struct dirent *reader, fileEntry files[])
+{
+    struct stat st;
+    while ((reader = readdir(directory)))
+    {
+        strcpy(files->fileName, reader->d_name);
+        char *name = reader->d_name;
+        stat(name, &st);
+        int size;
+        size = st.st_size;
+        files->fileSize = size;
+        printf("%s: %lld bytes\n", files->fileName, files->fileSize);
+        files++;
+    }
+}
+
 int countFiles(DIR *directory, struct dirent *fileReader)
 {
-    int numFiles;
+    int numFiles = 0;
     while ((fileReader = readdir(directory)))
     {
         numFiles++;

@@ -11,6 +11,7 @@ typedef struct
     off_t file_size;
     mode_t mode;
     uid_t user_id;
+    time_t last_modified;
 } file_entry;
 
 static int count_files(DIR *directory, struct dirent *reader);
@@ -52,14 +53,16 @@ void populate_file_entries(DIR *directory, struct dirent *reader, file_entry fil
         size = st.st_size;
         files->file_size = size;
         files->mode = st.st_mode;
+        files->user_id = st.st_uid;
+        files->last_modified = st.st_mtimespec.tv_sec;
 
         if (S_ISDIR(st.st_mode))
         {
-            printf("%4hu %8lld bytes %4s\n", files->mode, files->file_size, files->file_name);
+            printf("%3u dirt %4hu %8lld bytes %8s %10ld\n", files->user_id, files->mode, files->file_size, files->file_name, files->last_modified);
         }
         else
         {
-            printf("%4hu %8lld bytes %4s\n", files->mode, files->file_size, files->file_name);
+            printf("%3u file %4hu %8lld bytes %8s %10ld\n", files->user_id, files->mode, files->file_size, files->file_name, files->last_modified);
         }
         files++;
     }

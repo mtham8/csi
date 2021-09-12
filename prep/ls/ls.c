@@ -1,5 +1,5 @@
-#include <dirent.h>
 #include <stdio.h>
+#include <dirent.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -7,12 +7,14 @@
 
 typedef struct
 {
-    char fileName[NAME_MAX];
-    off_t fileSize;
-} fileEntry;
+    char file_name[NAME_MAX];
+    off_t file_size;
+    mode_t mode;
+    uid_t user_id;
+} file_entry;
 
-static int countFiles(DIR *directory, struct dirent *reader);
-static void populateFileEntries(DIR *directory, struct dirent *reader, fileEntry files[]);
+static int count_files(DIR *directory, struct dirent *reader);
+static void populate_file_entries(DIR *directory, struct dirent *reader, file_entry files[]);
 
 int main(void)
 {
@@ -25,41 +27,50 @@ int main(void)
         perror("Unable to read directory");
         return (1);
     }
-    int numberOfFiles = countFiles(directory, readdir(directory));
-    fileEntry files[numberOfFiles];
+    int number_of_files = count_files(directory, readdir(directory));
+    file_entry files[number_of_files];
 
     // reset directory stream
     rewinddir(directory);
-    populateFileEntries(directory, readdir(directory), files);
+    populate_file_entries(directory, readdir(directory), files);
 
-    printf("Total Files: %d\n", numberOfFiles);
+    printf("Total Files: %d\n", number_of_files);
 
     // close directory
     return closedir(directory);
 }
 
-void populateFileEntries(DIR *directory, struct dirent *reader, fileEntry files[])
+void populate_file_entries(DIR *directory, struct dirent *reader, file_entry files[])
 {
     struct stat st;
     while ((reader = readdir(directory)))
     {
-        strcpy(files->fileName, reader->d_name);
+        strcpy(files->file_name, reader->d_name);
         char *name = reader->d_name;
         stat(name, &st);
         int size;
         size = st.st_size;
-        files->fileSize = size;
-        printf("%s: %lld bytes\n", files->fileName, files->fileSize);
+        files->file_size = size;
+        files->mode = st.st_mode;
+
+        if (S_ISDIR(st.st_mode))
+        {
+            printf("%4hu %8lld bytes %4s\n", files->mode, files->file_size, files->file_name);
+        }
+        else
+        {
+            printf("%4hu %8lld bytes %4s\n", files->mode, files->file_size, files->file_name);
+        }
         files++;
     }
 }
 
-int countFiles(DIR *directory, struct dirent *fileReader)
+int count_files(DIR *directory, struct dirent *file_reader)
 {
-    int numFiles = 0;
-    while ((fileReader = readdir(directory)))
+    int num_files = 0;
+    while ((file_reader = readdir(directory)))
     {
-        numFiles++;
+        num_files++;
     }
-    return numFiles;
+    return num_files;
 }

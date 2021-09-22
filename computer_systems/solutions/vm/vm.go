@@ -25,6 +25,8 @@ const (
 // __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ ... __
 // ^==DATA===============^ ^==INSTRUCTIONS==============^
 //
+
+// TODO: implement some degree of memory protection, such as preventing instructions from being accidentally overwritten.
 func compute(memory []byte) {
 
 	registers := [3]byte{8, 0, 0} // PC, R1 and R2
@@ -37,43 +39,38 @@ func compute(memory []byte) {
 		// // decode and execute
 		switch op {
 		case Load:
-			registers[0] += 3
-			r1 := memory[pc+1]
-			addr := memory[pc+2]
+			// load    r1  addr
 			// Load value at given address into given register
-			registers[r1] = memory[addr]
+			registers[memory[pc+1]] = memory[memory[pc+2]]
 		case Store:
-			registers[0] += 3
-			r1 := memory[pc+1]
-			addr := memory[pc+2]
+			// store   r2  addr
 			// Store the value in register at the given memory address
-			memory[addr] = registers[r1]
+			memory[memory[pc+2]] = registers[memory[pc+1]]
 		case Add:
-			registers[0] += 3
-			r1 := memory[pc+1]
-			r2 := memory[pc+2]
+			// add     r1  r2
 			// Set r1 = r1 + r2
-			registers[r1] += registers[r2]
+			registers[memory[pc+1]] += registers[memory[pc+2]]
 		case Sub:
-			registers[0] += 3
-			r1 := memory[pc+1]
-			r2 := memory[pc+2]
+			// sub     r1  r2
 			// Set r1 = r1 - r2
-			registers[r1] -= registers[r2]
+			registers[memory[pc+1]] -= registers[memory[pc+2]]
 		case Addi:
-			registers[0] += 3
-			r1 := memory[pc+1]
-			val := memory[pc+2]
-			// Set r1 = r1 + val
-			registers[r1] += val
+			// addi r1 4
+			registers[memory[pc+1]] += memory[pc+2]
 		case Subi:
-			registers[0] += 3
-			r1 := memory[pc+1]
-			val := memory[pc+2]
-			// Set r1 = r1 - val
-			registers[r1] -= val
+			registers[memory[pc+1]] -= memory[pc+2]
+		case Jump:
+			// jump 40
+			registers[0] = memory[pc+1]
+			continue
+		case Beqz:
+			// beqz r2 3
+			if registers[memory[pc+1]] == 0 {
+				registers[0] += memory[pc+2]
+			}
 		case Halt:
 			return
 		}
+		registers[0] += 3
 	}
 }
